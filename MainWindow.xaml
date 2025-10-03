@@ -1,130 +1,58 @@
-﻿ using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+﻿<Window x:Class="Tempo_Detector_2.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Tempo_Detector_2"
+        mc:Ignorable="d"
+        Title="Tempo Detector" Height="450" Width="800">
 
-namespace Tempo_Detector
-{
-    public partial class MainWindow : Window
-    {
-        //the time intervals in milliseconds between taps
-        private readonly List<double>_tapIntervals = new List
-    <double>();
+    <Grid Margin="20">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
 
-        //the most recent tap 
-        private DateTime _lastTapTime;
+        <!-- Left side: Tap and Reset buttons -->
+        <StackPanel Grid.Column="0" Margin="0,0,10,0" VerticalAlignment="Center" HorizontalAlignment="Stretch">
+            <Button x:Name="TapButton"
+                    Content="Tap"
+                    Height="150"
+                    FontSize="28"
+                    Click="TapButton_Click" />
 
-        //the number of recent taps including the rolling average
-        private const int TapsToAverage = 4;
+            <Button x:Name="ResetButton"
+                    Content="Reset"
+                    Height="50"
+                    Margin="0,10,0,0"
+                    FontSize="18"
+                    Background="#BC544B"
+                    Foreground="White"
+                    Click="ResetButton_Click" />
+        </StackPanel>
 
-        public MainWindow()
-        {
-            InitializeComponent();
-            ResetCalculcation();
-        }
+        <!-- Right side: BPM Display -->
+        <Border Grid.Column="1"
+                Background="#FF3E3E42"
+                CornerRadius="8"
+                Margin="10,0,0,0"
+                Padding="20">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Image x:Name="LlamaImage"
+                       Source="Images/redminecraftllama.png"
+                       Height="200"
+                       Margin="0,0,0,20"
+                       Stretch="Uniform" />
 
-        private void TapButton_Click(object sender, RoutedEventArgs e)
-        {
-            // now = the current time
-            DateTime now = DateTime.Now;
-
-            if (_lastTapTime != DateTime.MinValue)
-            { 
-                //interval is the time between the last tap and the current tap
-                double interval = (now - _lastTapTime).TotalMilliseconds;
-                //adding that time to the list
-                _tapIntervals.Add(interval);
-            }
-
-            //update the list of taps to grab the next calculation
-            _lastTapTime = now;
-
-            //keeping the list from growing indefinitely.  
-            while(_tapIntervals.Count > TapsToAverage)
-            {
-                //removing the oldest interval from the front of the list
-                _tapIntervals.RemoveAt(0);
-            }
-
-            //we need 2 taps minimal to calculate a tempo
-            if(_tapIntervals.Any())
-            {
-                //whatever is inside of the list, average it
-                double averageInterval = _tapIntervals.Average();
-
-                if(averageInterval > 0)
-                {
-                    // bpm = 60000 ms per minute / average interval time
-                    double bpm = 60000 / averageInterval;
-                    BPMTextBlock.Text = $"BPM: {bpm:F1}";
-                    // NEW: Update the text color based on the BPM value
-                    BPMTextBlock.Foreground = new SolidColorBrush(GetBPMColor(bpm));
-                }
-            }
-        }
-        
-        private void ResetButton_Click(object sender, RoutedEventArgs e)
-        {
-            ResetCalculcation();
-        }
-
-        private void ResetCalculcation()
-        {
-            _tapIntervals.Clear();
-            _lastTapTime = DateTime.MinValue;
-            BPMTextBlock.Text = "Tap to start";
-            // Reset the text color to its original state (White)
-            BPMTextBlock.Foreground = new SolidColorBrush(Colors.White);
-        }
-
-        private Color GetBPMColor(double bpm)
-        {
-            // Set the boundaries for the color change.
-            double minBPM = 30;
-            double maxBPM = 120;
-            
-            double clampedBpm = bpm;
-
-            // Clamp the BPM using if statements, as requested.
-            // (Clamp means to restrict a value to be between a minimum and a maximum.)
-            if (clampedBpm
-        <minBPM)
-            {
-                clampedBpm = minBPM;
-            }
-            else if (clampedBpm >maxBPM)
-            {
-                clampedBpm = maxBPM;
-            }
-
-            // Normalize the BPM to a value between 0.0 (cool/slow) and 1.0 (warm/fast).
-            // A normalized value is a number scaled down to be in a smaller, simpler range (like 0 to 1).
-            double normalized = (clampedBpm - minBPM) / (maxBPM - minBPM);
-
-            // Calculate the Red and Blue components for the cool-to-warm transition.
-            // Red increases as BPM increases (0.0 to 1.0).
-            double red = normalized;
-            // Blue decreases as BPM increases (1.0 to 0.0).
-            double blue = 1.0 - normalized;
-
-            // Green is highest in the middle (around 60-75 BPM) for a smooth blend.
-            double green = 1.0 - Math.Abs(normalized - 0.5) * 2.0;
-
-            // Convert the 0.0-1.0 doubles to byte values (0-255).
-            byte r = (byte)(red * 255);
-            byte g = (byte)(green * 255);
-            byte b = (byte)(blue * 255);
-
-            return Color.FromRgb(r, g, b);
-        }
-    }
-}
+                <TextBlock x:Name="BPMTextBlock"
+                           Text="Tap to start"
+                           Foreground="White"
+                           FontSize="48"
+                           FontWeight="Bold"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Center"
+                           TextAlignment="Center" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>
